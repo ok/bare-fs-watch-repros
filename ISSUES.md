@@ -3,7 +3,7 @@
 Two issues, each written as it would be posted, followed by the fix each would come with as a
 pull request. Everything below is verified against bare-fs 4.8.1 (`binding.c`, `index.js`) and
 libuv 1.52.1, and reproduced by the scripts in this repository on GitHub Actions
-(run 36121193600) and locally. `<repro-url>` is this repository's URL once it is public.
+(run 36121193600) and locally. `https://github.com/ok/bare-fs-watch-repros` is this repository's URL once it is public.
 
 ---
 
@@ -30,7 +30,7 @@ limit for kqueue-backed file watches on macOS (`EMFILE`).
 
 ### Reproduction
 
-`<repro-url>/i1-silent-start-failure` — one script, runs under both runtimes.
+`https://github.com/ok/bare-fs-watch-repros/i1-silent-start-failure` — one script, runs under both runtimes.
 
 ```
 cd i1-silent-start-failure && npm install
@@ -150,7 +150,7 @@ Node delivers these as a `'change'` event whose filename is `null`; bare-fs cras
 
 ### Reproduction
 
-`<repro-url>/i2-null-filename` — Windows.
+`https://github.com/ok/bare-fs-watch-repros/i2-null-filename` — Windows.
 
 ```
 cd i2-null-filename && npm install
