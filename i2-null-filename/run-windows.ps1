@@ -1,7 +1,11 @@
 # Windows: start the observer under Bare in a second process, hit its directory with the load
 # generator, and report how the observer ended. Then the same with Node as the control.
 #
-#   .\run-windows.ps1 [-Files 20000] [-Mode all] [-Rounds 1] [-BareFs 4.8.2]
+#   .\run-windows.ps1 [-Files 20000] [-Mode all] [-Rounds 1] [-BareFs 4.8.2] [-StallMs 2000]
+#
+# A fast machine drains libuv's 4 KB buffer as quickly as the load fills it, so the observer stalls
+# its own event loop for -StallMs after the first event (a GC pause or a busy app would do the same);
+# every change record arriving meanwhile is lost and Windows reports the overflow with a NULL filename.
 #
 # Expected with bare-fs 4.8.1 (pinned): the Bare observer exits with -1073741819 (0xC0000005,
 # access violation) shortly after the load starts; the Node observer survives and reports null
@@ -11,7 +15,8 @@ param(
   [int]$Files = 20000,
   [string]$Mode = 'all',
   [int]$Rounds = 1,
-  [string]$BareFs = ''   # e.g. -BareFs 4.8.2 to run the same test against a fixed release
+  [string]$BareFs = '',   # e.g. -BareFs 4.8.2 to run the same test against a fixed release
+  [int]$StallMs = 2000    # block the observer's loop after its first event so the buffer overflows
 )
 $ErrorActionPreference = 'Continue'
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -27,7 +32,7 @@ function Run-Observer([string]$label, [string[]]$cmd) {
   $out = Join-Path $here ("observer-" + $label + ".log")
   $err = Join-Path $here ("observer-" + $label + ".err")
   Write-Host "== $label observer: $($cmd -join ' ') $dir"
-  $p = Start-Process -FilePath $cmd[0] -ArgumentList (($cmd[1..($cmd.Length-1)] + @($dir, '--seconds', '20')) -join ' ') `
+  $p = Start-Process -FilePath $cmd[0] -ArgumentList (($cmd[1..($cmd.Length-1)] + @($dir, '--seconds', '20', '--stall', "$StallMs")) -join ' ') `
        -RedirectStandardOutput $out -RedirectStandardError $err -PassThru -NoNewWindow
   Start-Sleep -Seconds 2
   Write-Host "== load"

@@ -1,7 +1,10 @@
 // Observer: watches a directory and counts what arrives. Runs under both runtimes:
-//   node node_modules/bare-runtime/bin/bare observer.js <dir> [--per-dir] [--seconds S]   (bare)
-//   node observer.js <dir> [--per-dir] [--seconds S]                                        (node, control)
-// Prints a line per second and a summary at the end. Under bare-fs 4.8.1 on Windows the process
+//   node node_modules/bare-runtime/bin/bare observer.js <dir> [--per-dir] [--seconds S] [--stall MS]   (bare)
+//   node observer.js <dir> [--per-dir] [--seconds S] [--stall MS]                                        (node, control)
+// Prints a line per second and a summary at the end. `--stall MS` blocks the event loop for MS
+// milliseconds after the first event: a fast machine otherwise drains the 4 KB buffer as quickly as
+// the load fills it and never overflows; a stalled watcher (a GC pause, a busy app) is the realistic
+// condition, and the stall makes the overflow deterministic. Under bare-fs 4.8.1 on Windows the process
 // dies (access violation) the first time libuv reports lost events with a NULL filename; under Node
 // those arrive as events whose filename is null.
 'use strict'
@@ -21,6 +24,9 @@ if (!dir) {
 const recursive = !args.includes('--per-dir')
 const secondsIdx = args.indexOf('--seconds')
 const seconds = secondsIdx === -1 ? 0 : Number(args[secondsIdx + 1])
+const stallIdx = args.indexOf('--stall')
+const stallMs = stallIdx === -1 ? 0 : Number(args[stallIdx + 1])
+let stalled = false
 
 fs.mkdirSync(dir, { recursive: true })
 
@@ -33,6 +39,14 @@ let lastSecond = 0
 
 const watcher = fs.watch(dir, { recursive })
 watcher.on('change', (kind, name) => {
+  if (stallMs > 0 && !stalled) {
+    stalled = true
+    console.log(`  first event: stalling the event loop for ${stallMs} ms so the buffer overflows`)
+    const until = Date.now() + stallMs
+    while (Date.now() < until) {
+      /* busy: no completion can be re-issued, every further change record is lost */
+    }
+  }
   events++
   if (kind === 'rename') renames++
   else changes++
@@ -43,7 +57,7 @@ watcher.on('error', (err) => {
   console.log(`  error event: ${err.code || err.message}`)
 })
 
-console.log(`[observer ${runtime}] watching ${dir} (${recursive ? 'recursive' : 'per-directory'}); waiting for load…`)
+console.log(`[observer ${runtime}] watching ${dir} (${recursive ? 'recursive' : 'per-directory'}${stallMs ? `, stall ${stallMs} ms` : ''}); waiting for load…`)
 
 const tick = setInterval(() => {
   const delta = events - lastSecond

@@ -55,7 +55,10 @@ Validation on a Windows machine, two runs of the same test:
 
 `run-windows.ps1` starts `observer.js` (a recursive `fs.watch`, counting events and `null`
 filenames) in a second process, runs `load.js` against its directory (create → rename-shuffle →
-overwrite → delete, 20 000 empty files by default), and prints the observer's exit code: with
+overwrite → delete, 20 000 empty files by default), and prints the observer's exit code. The
+observer stalls its own event loop for two seconds after its first event (`-StallMs`): a fast
+machine otherwise drains the 4 KB buffer as quickly as the load fills it and never overflows, while
+a watcher that is busy or paused — the realistic case — loses everything that arrives meanwhile: with
 bare-fs 4.8.1 the Bare observer dies with `-1073741819` (`0xC0000005`), the Node observer survives
 and reports `null` filenames. File size is irrelevant: the 4 KB buffer holds change *records*
 (12 bytes + the UTF-16 name each, ~128 for ten-character names); the number of operations in a
