@@ -7,10 +7,10 @@ to see the fix (`npm install bare-fs@4.8.2 --no-save`, or `-BareFs 4.8.2` on the
 
 Runnable reproductions of two defects in `bare-fs`'s `fs.watch()` (bare-fs 4.8.1, Bare 1.33.x),
 each next to the Node behaviour for comparison. They exist so the upstream issues can point at
-code, and so the workarounds in [chokibare](https://github.com/ok/chokibare) are justified by
+code, and so the workarounds in [chokidar4bare](https://github.com/ok/chokidar4bare) are justified by
 something that can be re-run.
 
-| Issue | What bare-fs does | What Node does | Workaround chokibare had to build |
+| Issue | What bare-fs does | What Node does | Workaround chokidar4bare had to build |
 | --- | --- | --- | --- |
 | **1. Silent start failure** ([bare-fs#51](https://github.com/holepunchto/bare-fs/issues/51)) | `fs.watch()` returns a watcher that never fires and never errors when `uv_fs_event_start()` fails (missing path → ENOENT, past `fs.inotify.max_user_watches` → ENOSPC, past the open-file limit on macOS → EMFILE) | throws synchronously | on Linux, after every arm, read `/proc/self/fdinfo/<inotify fd>` and check the kernel actually holds the watch (`lib/inotify.js`); report the ones it does not as `ENOSPC` |
 | **2. NULL filename crash** ([bare-fs#52](https://github.com/holepunchto/bare-fs/issues/52)) | the native event callback calls `strlen(filename)` without a NULL check; libuv passes `NULL` on a Windows `ReadDirectoryChangesW` buffer overflow (4 KB buffer, ~50–100 events) and on a kqueue `F_GETPATH` failure → the process crashes | delivers `'change'` with a `null` filename ("events were lost, rescan") | do not use the recursive backend on Windows under Bare until this is fixed |

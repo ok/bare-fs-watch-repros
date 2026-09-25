@@ -68,7 +68,7 @@ Linux, past the inotify limit (Docker `node:22-slim` arm64, `max_user_watches=40
 
 A caller cannot distinguish a dead watch from a healthy one. For a file watcher that means a folder
 that silently stops reporting changes with no error anywhere — the one failure mode a watcher must
-never have. To cope, [chokibare](https://github.com/ok/chokibare) has to ask the kernel after every
+never have. To cope, [chokidar4bare](https://github.com/ok/chokidar4bare) has to ask the kernel after every
 arm on Linux (read `/proc/self/fdinfo/<inotify fd>` and check the watch is listed) and has no
 equivalent for `EMFILE` on macOS at all.
 
@@ -171,7 +171,7 @@ run 36121193600, job "Issue 2 / NULL filename / windows":
   events: 2, events with a null filename: 1
 ```
 
-Exit code 139 is a segmentation fault. The same crash killed a chokibare test run on
+Exit code 139 is a segmentation fault. The same crash killed a chokidar4bare test run on
 `windows-latest` on a burst of only 500 appends to one file under a single-directory watch, so it
 is not specific to recursive watches or to huge bursts.
 
