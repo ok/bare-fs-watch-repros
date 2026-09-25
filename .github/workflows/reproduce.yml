@@ -1,0 +1,69 @@
+name: Reproduce
+on:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  i1-missing-path:
+    name: Issue 1 / missing path / ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: i1-silent-start-failure
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - name: bare (observed)
+        run: node node_modules/bare-runtime/bin/bare repro.js
+      - name: node (control)
+        run: node repro.js
+  i1-inotify-limit:
+    name: Issue 1 / past max_user_watches / linux
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: i1-silent-start-failure
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - name: lower the limit to what the runner holds + 40
+        run: |
+          held=$(sudo sh -c 'cat /proc/*/fdinfo/* 2>/dev/null | grep -c "^inotify"')
+          sudo sysctl -w fs.inotify.max_user_watches=$((held + 40))
+      - name: bare (observed)
+        run: node node_modules/bare-runtime/bin/bare repro.js limit 100
+      - name: node (control)
+        run: node repro.js limit 100
+  i2-null-filename:
+    name: Issue 2 / NULL filename / windows
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: i2-null-filename
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - name: bare (observed — expected to crash)
+        continue-on-error: true
+        run: |
+          node node_modules/bare-runtime/bin/bare repro.js "$RUNNER_TEMP/burst-bare" 50000
+          echo "bare exit code: $?"
+      - name: node (control)
+        run: node repro.js "$RUNNER_TEMP/burst-node" 50000
