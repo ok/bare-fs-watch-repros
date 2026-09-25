@@ -1,6 +1,8 @@
-# Draft issues for holepunchto/bare-fs — FOR REVIEW, NOT POSTED
+# Issues filed against holepunchto/bare-fs
 
-Two issues, each written as it would be posted, followed by the fix each would come with as a
+Filed 2026-09-25: [bare-fs#51](https://github.com/holepunchto/bare-fs/issues/51) (issue 1 below) and
+[bare-fs#52](https://github.com/holepunchto/bare-fs/issues/52) (issue 2 below). The text is kept here
+as filed. Two issues, each written as it was posted, followed by the fix each would come with as a
 pull request. Everything below is verified against bare-fs 4.8.1 (`binding.c`, `index.js`) and
 libuv 1.52.1, and reproduced by the scripts in this repository on GitHub Actions
 (run 36121193600) and locally. `https://github.com/ok/bare-fs-watch-repros` is this repository's URL once it is public.
