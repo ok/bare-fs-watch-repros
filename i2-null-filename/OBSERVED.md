@@ -38,3 +38,27 @@ bare exit code: 0
 
 The Bare observer survives and reports the overflow as a `null`-filename event, exactly as Node
 does. The 4.8.1 job in the same run still exits with code 139.
+
+## Physical Windows machine, 2026-09-25
+
+Same commands, same box (`C:\Users\Mirall`, Bare 1.33.4), first with 4.8.1 and then with 4.8.2:
+
+```
+> npm install bare-fs@4.8.1 --no-save
+> node node_modules\bare-runtime\bin\bare repro.js $env:TEMP\burst2 50000; "exit=$LASTEXITCODE"
+[bare v1.33.4 (bare-fs 4.8.1)] recursive watch on C:\Users\Mirall\AppData\Local\Temp\burst2, then a burst of 50000 file creates
+exit=-1073741819
+
+> npm install bare-fs@4.8.2 --no-save
+> node node_modules\bare-runtime\bin\bare repro.js $env:TEMP\burst2 50000; "exit=$LASTEXITCODE"
+[bare v1.33.4 (bare-fs 4.8.2)] recursive watch on C:\Users\Mirall\AppData\Local\Temp\burst2, then a burst of 50000 file creates
+  events: 2, events with a null filename: 1
+exit=0
+```
+
+`-1073741819` is `0xC0000005`, an access violation: the process died in the callback before any
+JavaScript ran. On 4.8.2 the same overflow is delivered as one `null`-filename event.
+
+Note: `run-windows.ps1` (observer and load in separate processes) did not overflow on this machine
+even with a 2 s stall — the watching process drained in time. The single-process `repro.js`, where
+the burst runs inside the watching process, is the deterministic form.

@@ -46,12 +46,18 @@ npm install
 .\run-windows.ps1                   # Windows: observer under Bare + load generator, then the same under Node
 ```
 
-Validation on a Windows machine, two runs of the same test:
+Validation on a Windows machine — the single-process form, where the burst runs inside the
+watching process, is the deterministic one (observed on a physical box, `OBSERVED.md`):
 
 ```
-.\run-windows.ps1                 # bare-fs 4.8.1: Bare observer exits -1073741819 (access violation)
-.\run-windows.ps1 -BareFs 4.8.2   # bare-fs 4.8.2: Bare observer survives, reports null filenames like Node
+npm install bare-fs@4.8.1 --no-save
+node node_modules\bare-runtime\bin\bare repro.js $env:TEMP\burst 50000; "exit=$LASTEXITCODE"   # exit=-1073741819
+npm install bare-fs@4.8.2 --no-save
+node node_modules\bare-runtime\bin\bare repro.js $env:TEMP\burst 50000; "exit=$LASTEXITCODE"   # null filename, exit=0
 ```
+
+The two-process form (`run-windows.ps1`, observer and load generator separate) only overflows when
+the observer cannot drain in time; on a fast machine it may not, even with the built-in stall.
 
 `run-windows.ps1` starts `observer.js` (a recursive `fs.watch`, counting events and `null`
 filenames) in a second process, runs `load.js` against its directory (create → rename-shuffle →
