@@ -38,8 +38,22 @@ throw the libuv error, matching Node.
 ```
 cd i2-null-filename
 npm install
-node node_modules/bare-runtime/bin/bare repro.js <dir>   # Windows: recursive watch + a 50 000-file burst → crash
-node repro.js <dir>                 # control: 'change' events with filename === null
+.\run-windows.ps1                   # Windows: observer under Bare + load generator, then the same under Node
+```
+
+`run-windows.ps1` starts `observer.js` (a recursive `fs.watch`, counting events and `null`
+filenames) in a second process, runs `load.js` against its directory (create → rename-shuffle →
+overwrite → delete, 20 000 empty files by default), and prints the observer's exit code: with
+bare-fs 4.8.1 the Bare observer dies with `-1073741819` (`0xC0000005`), the Node observer survives
+and reports `null` filenames. File size is irrelevant: the 4 KB buffer holds change *records*
+(12 bytes + the UTF-16 name each, ~128 for ten-character names); the number of operations in a
+short window is what overflows it, and a rename is two records. Options: `-Files N`, `-Mode
+create|rename|write|delete|all`, `-Rounds R`. The pieces also run alone:
+
+```
+node node_modules/bare-runtime/bin/bare observer.js <dir> --seconds 20   # in one terminal
+node load.js <dir> --files 20000 --mode rename --rounds 3                # in another
+node node_modules/bare-runtime/bin/bare repro.js <dir>                   # the single-process form used by CI
 ```
 
 Where it is in the source: `bare-fs/binding.c`, `bare_fs__on_watcher_event()`: `strlen(filename)` on
