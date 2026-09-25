@@ -23,3 +23,18 @@ filename libuv passes when the ReadDirectoryChangesW buffer overflowed.
 
 Node delivers the same overflow as a `'change'` event whose filename is `null`: the signal a watcher
 needs to rescan.
+
+## After the fix — bare-fs 4.8.2 (holepunchto/bare-fs#53), same runner, same burst
+
+Workflow run 36180367510, job "Issue 2 / NULL filename / windows / bare-fs 4.8.2", with no
+`continue-on-error` on the bare step:
+
+```
+bare-fs 4.8.2
+[bare v1.33.4 (bare-fs 4.8.2)] recursive watch on D:\a\_temp/burst-bare, then a burst of 50000 file creates
+  events: 2, events with a null filename: 1
+bare exit code: 0
+```
+
+The Bare observer survives and reports the overflow as a `null`-filename event, exactly as Node
+does. The 4.8.1 job in the same run still exits with code 139.
