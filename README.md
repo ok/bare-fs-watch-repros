@@ -1,5 +1,10 @@
 # bare-fs watch reproductions
 
+**Both defects were fixed upstream on the day they were filed:**
+[holepunchto/bare-fs#53](https://github.com/holepunchto/bare-fs/pull/53), released as **bare-fs 4.8.2**.
+The reproductions pin **4.8.1** so the defects stay reproducible; each can be re-run against 4.8.2
+to see the fix (`npm install bare-fs@4.8.2 --no-save`, or `-BareFs 4.8.2` on the Windows script).
+
 Runnable reproductions of two defects in `bare-fs`'s `fs.watch()` (bare-fs 4.8.1, Bare 1.33.x),
 each next to the Node behaviour for comparison. They exist so the upstream issues can point at
 code, and so the workarounds in [chokibare](https://github.com/ok/chokibare) are justified by
@@ -39,6 +44,13 @@ throw the libuv error, matching Node.
 cd i2-null-filename
 npm install
 .\run-windows.ps1                   # Windows: observer under Bare + load generator, then the same under Node
+```
+
+Validation on a Windows machine, two runs of the same test:
+
+```
+.\run-windows.ps1                 # bare-fs 4.8.1: Bare observer exits -1073741819 (access violation)
+.\run-windows.ps1 -BareFs 4.8.2   # bare-fs 4.8.2: Bare observer survives, reports null filenames like Node
 ```
 
 `run-windows.ps1` starts `observer.js` (a recursive `fs.watch`, counting events and `null`

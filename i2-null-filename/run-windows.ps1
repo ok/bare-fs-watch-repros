@@ -1,20 +1,25 @@
 # Windows: start the observer under Bare in a second process, hit its directory with the load
 # generator, and report how the observer ended. Then the same with Node as the control.
 #
-#   .\run-windows.ps1 [-Files 20000] [-Mode all] [-Rounds 1]
+#   .\run-windows.ps1 [-Files 20000] [-Mode all] [-Rounds 1] [-BareFs 4.8.2]
 #
-# Expected with bare-fs 4.8.1: the Bare observer exits with -1073741819 (0xC0000005, access
-# violation) shortly after the load starts; the Node observer survives and reports null filenames.
+# Expected with bare-fs 4.8.1 (pinned): the Bare observer exits with -1073741819 (0xC0000005,
+# access violation) shortly after the load starts; the Node observer survives and reports null
+# filenames. With -BareFs 4.8.2 (the fix, holepunchto/bare-fs#53) the Bare observer survives too
+# and reports the same null filenames.
 param(
   [int]$Files = 20000,
   [string]$Mode = 'all',
-  [int]$Rounds = 1
+  [int]$Rounds = 1,
+  [string]$BareFs = ''   # e.g. -BareFs 4.8.2 to run the same test against a fixed release
 )
 $ErrorActionPreference = 'Continue'
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $here
 
 if (-not (Test-Path node_modules)) { npm install --no-audit --no-fund | Out-Null }
+if ($BareFs -ne '') { npm install "bare-fs@$BareFs" --no-save --no-audit --no-fund | Out-Null }
+Write-Host ("bare-fs " + (node -p "require('bare-fs/package').version"))
 
 function Run-Observer([string]$label, [string[]]$cmd) {
   $dir = Join-Path $env:TEMP ("bare-fs-repro-" + $label + "-" + [DateTimeOffset]::UtcNow.ToUnixTimeSeconds())

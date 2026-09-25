@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "description": "bare-fs fs.watch() returns a dead watcher when uv_fs_event_start() fails",
   "dependencies": {
-    "bare-fs": "^4.8.1",
+    "bare-fs": "4.8.1",
     "bare-os": "^3.9.3",
     "bare-path": "^3.1.2",
     "bare-runtime": "^1.33.4"
